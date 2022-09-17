@@ -1,8 +1,8 @@
 "use strict";
 
-
 /** Makes a multidimensional array
- * 
+ * @param {number[]} args array dimensions (numbers)
+ * @returns {MultiArray} a multidimensional array filled with 0's
  */
 class MultiArray extends Array {
     #dimensions;
