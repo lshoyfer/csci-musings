@@ -1,0 +1,31 @@
+#app {
+  background-color: red;
+  height: 100px;
+  width: 100px;
+}
+
+.cats {
+  height: 30vh;
+}
+
+#outerFlex,
+#innerFlex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+li {
+  list-style-type: none;
+}
+
+#innerFlex {
+  color: red;
+  margin: 30px auto;
+  padding: 0;
+}
+
+.tag {
+  width: 100px;
+}
