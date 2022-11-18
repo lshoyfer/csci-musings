@@ -9,19 +9,19 @@ await api.getCats();
 await api.makeHtml(10);
 await api.makeCats(10);
 
-queueMicrotask(() => { Promise.all(
-  Array.from(document.images)
-    .filter((img) => !img.complete)
-    .map(
-      (img, i) =>
-        new Promise((resolve) => {
-          img.onload = img.onerror = setTimeout(() => resolve(), 20000*i);
-        })
-    )
-).then(() => {
-  console.log("images finished loading");
-});
-});
+// Promise.all(
+//   Array.from(document.images)
+//     .filter((img) => !img.complete)
+//     .map(
+//       (img, i) =>
+//         new Promise((resolve) => {
+//           img.onload = img.onerror = resolve;
+//         })
+//     )
+// ).then(() => {
+//   console.log("images finished loading");
+// });
+
 
 form.addEventListener("submit", function (e) {
   let numCats = 0;
