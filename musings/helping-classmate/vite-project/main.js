@@ -5,25 +5,19 @@ let DOMSelectors = {
   container: document.getElementById("container"),
 };
 
-await api.getCats();
-await api.makeHtml(10);
-await api.makeCats(10);
+(async () => {
+  await api.getCats();
+  await api.makeCatsHTML(10);
+  console.log(api.reruns);
+})()
 
-queueMicrotask(() => { Promise.all(
-  Array.from(document.images)
-    .filter((img) => !img.complete)
-    .map(
-      (img, i) =>
-        new Promise((resolve) => {
-          img.onload = img.onerror = setTimeout(() => resolve(), 20000*i);
-        })
-    )
-).then(() => {
-  console.log("images finished loading");
-});
-});
-
-form.addEventListener("submit", function (e) {
+// btw due to top level await this is included in the microtask
+// (js doesn't know whether this depends on the async code)
+// so either moving the EventListener above the await calls or
+// scoping the await calls will work, otherwise the form
+// waits for the cats to load before hydration i.e. it's
+// functionless. Above u can see I went with scoping.
+form.addEventListener("submit", async function (e) {
   let numCats = 0;
   e.preventDefault();
   console.log('yo');
@@ -31,6 +25,5 @@ form.addEventListener("submit", function (e) {
   numCats = input.value;
   console.log(input.value);
   input.value = "";
-  api.makeHtml(numCats);
-  api.makeCats();
+  await api.makeCatsHTML(numCats);
 });
