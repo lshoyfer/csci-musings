@@ -1,7 +1,5 @@
 "use strict";
 
-// microtask?
-
 function sb(strArr, ...args) { // REALTODO: IMPL ALL ARG REFS
     let strs = strArr.join('@');
     console.log('init', strs, '\n', args, '\n\n');
@@ -46,21 +44,18 @@ function sb(strArr, ...args) { // REALTODO: IMPL ALL ARG REFS
     }
 
     handleNest(strs);
-    let evalStr = '';
-    let funcArgs = '';
-    if (nestState.size) { // TODO: reworked it so much, check if necessary
-        console.log('\n\ncheck:', [...nestState.values()], '\n\nendcheck');
-        evalStr = [...nestState.values()].reduceRight((acc, cur) => {
-            // res = parseFn(cur); // TODO
-            // console.log(parseComp(cur));
-            console.log('\nRETURNED\n', cur = parseComp(cur));
-            nests && nests--;
-            return `${cur} { ${acc} } }`;
-        });
+    console.log('\n\ncheck:', [...nestState.values()], '\n\nendcheck');
+    const evalStr = [...nestState.values()].reduceRight((acc, cur) => {
+        // res = parseFn(cur); // TODO
+        // console.log(parseComp(cur));
+        console.log('\nRETURNED\n', cur = parseComp(cur));
+        nests && nests--;
+        return `${cur} { ${acc} } }`;
+    });
 
-        funcArgs = [...refState.keys()].reduce((acc, cur) => acc + `, ref${cur}`, 'set');
-        funcArgs = [...predState.keys()].reduce((acc, cur) => acc + `, pred${cur}`, funcArgs);
-    }
+    let funcArgs = [...refState.keys()].reduce((acc, cur) => acc + `, ref${cur}`, 'set');
+    funcArgs = [...predState.keys()].reduce((acc, cur) => acc + `, pred${cur}`, funcArgs);
+
 
     console.log('\nNESTSTATE\n', nestState);
     console.log('\nREFSTATE\n', refState);
@@ -148,8 +143,8 @@ const arr3 = [1, 2, 3];
 const arr4 = [-1, -2, -3];
 const arr5 = [0, 0, 0];
 
-// const nestedComp = sb`[([(x + y) for (const y of ${arr4})]) for (const x of ${arr3})]`;
-
+const nestedComp = sb`[([(x + y) for (const y of ${arr4})]) for (const x of ${arr3})]`;
+console.log(nestedComp);
 
 // HETEREREREREREHETEREREREREREHETEREREREREREHETERERERHETEREREREREREHETEREREREREREHETEREREREREREHETEREREREREREERERE
 // const nestedComp3 = sb`[([([([x, y, z]) for (const z of ${arr5}) if (z === 0)]) for (const y of ${arr3}) if (y>0)]) for (const x of ${arr4}) if (x<0)]`
@@ -198,9 +193,18 @@ const arr5 = [0, 0, 0];
 // }
 
 // console.log('\n\nstart endtest3\n\n');
-const matrix = [[1, 2, 3], [4, 5], [6, 7, 8, 9]];
+// const matrix = [[1, 2, 3], [4, 5], [6, 7, 8, 9]];
 // const flatM = [];
-console.log(sb`[([(el) for (const el of sub)]) for (const sub of ${matrix})]`);
+// console.log(sb`[([(el) for (const el of sub)]) for (const sub of ${matrix})]`);
+
+// let meme = [1, 2, 3];
+// let boolRef = true;
+// console.log(sb`[(x) for (const x of ${meme}) if (${boolRef})]`);
+// this will break it ^^ b/c i haven't implemented arbitrary refs anywhere, and
+// i don't feel like doing so either -- i've accomplished what i've set out to do
+// imo... tho if given another hour i could probably rewrite this to accommodate
+// for that
+
 
 // for (const sub of matrix) {
 //     for (const el of sub) {
