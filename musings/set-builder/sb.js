@@ -2,18 +2,20 @@
 
 // microtask?
 
-function sb(strArr, arg) { // REALTODO: IMPL ALL ARG REFS
-    let strs = strArr.toString();
-    console.log('init', strs, '\n', arg, '\n\n');
+function sb(strArr, ...args) { // REALTODO: IMPL ALL ARG REFS
+    let strs = strArr.join('@');
+    console.log('init', strs, '\n', args, '\n\n');
     const nestState = new Map([[0, strs]]); // TODO
+    const refState = new Map();
+    const predState = new Map();
     let nests = 0;
 
     function handlePopStr(str) {
         console.log(
-            '\nstartpop\n', 'old\n', nestState.get(nests-1), '\nnew\n',
+            '\nstartpop\n', 'old\n', nestState.get(nests - 1), '\nnew\n',
             nestState.get(nests), '\nendpop\n'
         );
-        nestState.set(nests-1, str.replace(nestState.get(nests), ''));
+        nestState.set(nests - 1, str.replace(nestState.get(nests), ''));
     }
 
     function handleNest(str) {
@@ -30,7 +32,7 @@ function sb(strArr, arg) { // REALTODO: IMPL ALL ARG REFS
             nestState.set(nests, `[${checkNest.exec(str).at(0)}]`);
             handlePopStr(str);
             console.log('parsed:', nestState.get(nests));
-            console.log('oldpop:', nestState.get(nests-1));
+            console.log('oldpop:', nestState.get(nests - 1));
             handleNest(nestState.get(nests));
         } else {
             // potential nests impl
@@ -45,17 +47,39 @@ function sb(strArr, arg) { // REALTODO: IMPL ALL ARG REFS
 
     handleNest(strs);
     let evalStr = '';
-    if (nestState.size) {
+    let funcArgs = '';
+    if (nestState.size) { // TODO: reworked it so much, check if necessary
         console.log('\n\ncheck:', [...nestState.values()], '\n\nendcheck');
         evalStr = [...nestState.values()].reduceRight((acc, cur) => {
             // res = parseFn(cur); // TODO
             // console.log(parseComp(cur));
-            parseComp(cur);
-            return `${cur}{${acc}}`;
+            console.log('\nRETURNED\n', cur = parseComp(cur));
+            nests && nests--;
+            return `${cur} { ${acc} } }`;
         });
+
+        funcArgs = [...refState.keys()].reduce((acc, cur) => acc + `, ref${cur}`, 'set');
+        funcArgs = [...predState.keys()].reduce((acc, cur) => acc + `, pred${cur}`, funcArgs);
     }
 
-    // console.log('zdes', evalStr);
+    console.log('\nNESTSTATE\n', nestState);
+    console.log('\nREFSTATE\n', refState);
+    // console.log('\nPREDSTATE\n', predState);
+    console.log('\nPREDSTATE\n', predState);
+    [...predState.values()].forEach((v) => console.log(v.toString()));
+
+    console.log('\nevalStr\n', evalStr);
+    console.log('\nfuncArgs\n', funcArgs);
+
+    console.log('\nPASSING-IN\n', ...refState.values(), ...[...predState.values()].map(
+        v => v.toString()
+    ), '\nPASSEDIN\n')
+
+    let set = [];
+    const evaluate = new Function(funcArgs, evalStr);
+    console.log('\nSTARTEVAL\n', evaluate.toString(), '\nENDEVAL\n');
+    evaluate(set, ...refState.values(), ...predState.values());
+    return set;
 
     // console.log(strs);
 
@@ -65,21 +89,35 @@ function sb(strArr, arg) { // REALTODO: IMPL ALL ARG REFS
         const rmParenth = /(?<=\().*(?=\))/;
         const getIterVar = /(?<=const|let|var).*(?=of)/;
 
-        const [outStr, _iterStr, predStr] = 
+        const [outStr, iterStr, predStr] =
             (function* () { for (let i = 0; i < 3; i++) yield formatAtomic.exec(str)?.at(0); })(); // yup
-        
-        console.log('\nstartvarch\n', outStr, '\n', _iterStr, '\n', predStr, '\nendvarch\n');
+
+        console.log('\nstartvarch\n', outStr, '\n', iterStr, '\n', predStr, '\nendvarch\n');
 
 
-        const iterVar = getIterVar.exec(_iterStr)?.at(0).trim();
-        const iterStr = _iterStr.replace(/(?<=of).*/, ' ');
+        const iterVar = getIterVar.exec(iterStr)?.at(0).trim();
+        // const iterStr = _iterStr.replace(/(?<=of).*(?=\))/, ' ');
         // const outStrCut = rmParenth.exec(outStr)?.at(0); // unneeded now i think
 
         console.log('\nstartparsevarch\n', iterVar, '\n', iterStr, '\nendparsevarch\n');
 
 
-        const pred = predStr ? new Function(iterVar, `return ${predStr}`) : () => true;
+        predState.set(nests, predStr ? new Function(iterVar, `return ${predStr}`) : () => true);
         // REALTODO: IMPL ALL ARG REFS 
+
+
+        if (iterStr.includes('@')) {
+            refState.set(nests, args.shift());
+            // nests && nests--;
+            return `for ${iterStr.replace('@', `ref${nests}`)} { if (pred${nests}(${iterVar})) `;
+        }
+        // nests && nests--;
+        return `for ${iterStr} { if (pred${nests}(${iterVar})) `;
+
+        // return (
+        //     `for ${iterStr.includes('@') ? iterStr}`
+        // );
+
 
         // const evaluate = new Function('refArr, pred, set', `
         //     for ${iterStr}refArr) {
@@ -87,7 +125,7 @@ function sb(strArr, arg) { // REALTODO: IMPL ALL ARG REFS
         //     }
         // `);
 
-        // evaluate(arg, pred, set);
+        // evaluate(args, pred, set);
 
         // return set;
     }
@@ -112,5 +150,61 @@ const arr5 = [0, 0, 0];
 
 // const nestedComp = sb`[([(x + y) for (const y of ${arr4})]) for (const x of ${arr3})]`;
 
-const nestedComp3 = sb`[([([([x, y, z]) for (const z of ${arr5}) if (z === 0)]) for (const y of ${arr3}) if (y)]) for (const x of ${arr4}) if (x<0)]`
-// console.log(nestedComp);
+
+// HETEREREREREREHETEREREREREREHETEREREREREREHETERERERHETEREREREREREHETEREREREREREHETEREREREREREHETEREREREREREERERE
+// const nestedComp3 = sb`[([([([x, y, z]) for (const z of ${arr5}) if (z === 0)]) for (const y of ${arr3}) if (y>0)]) for (const x of ${arr4}) if (x<0)]`
+// console.log('\n\n\nstartnested\n\n\n', nestedComp3, '\n\n\nendnested\n\n\n');
+
+
+// let pee = [];
+// for (const x of arr4) {
+//     if (x<0) {
+//         for (const y of arr3) {
+//             if (y>0) {
+//                 for (const z of arr5) {
+//                     if (z === 0) {
+//                         pee.push([x, y, z])
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+
+// console.log(pee);
+
+
+
+// const ts = [0, 1, 2];
+// const nts = [0, -1, -2];
+// const zts = [0, 0, 0];
+
+// console.log('\n\nstart endtest\n\n');
+// for (const p of ts) {
+//     if (p > 0) for (const n of nts) {
+//         if (n < 0) for (const z of zts) {
+//             if (z === 0) console.log(p, n, z);
+//         }
+//     }
+// }
+
+// console.log('\n\nstart endtest2\n\n');
+// for (const p of ts) {
+//     for (const n of nts) {
+//         for (const z of zts) {
+//             if ((p > 0) && (n < 0) && (z === 0)) console.log(p, n, z);
+//         }
+//     }
+// }
+
+// console.log('\n\nstart endtest3\n\n');
+const matrix = [[1, 2, 3], [4, 5], [6, 7, 8, 9]];
+// const flatM = [];
+console.log(sb`[([(el) for (const el of sub)]) for (const sub of ${matrix})]`);
+
+// for (const sub of matrix) {
+//     for (const el of sub) {
+//         flatM.push(el);
+//     }
+// }
+// console.log(flatM);
